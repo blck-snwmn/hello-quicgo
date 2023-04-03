@@ -25,5 +25,14 @@ func main() {
 	hclient := &http.Client{
 		Transport: roundTripper,
 	}
-	hclient.Get("https://localhost:4433")
+	res, err := hclient.Get("https://localhost:4433")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer res.Body.Close()
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(string(b))
 }

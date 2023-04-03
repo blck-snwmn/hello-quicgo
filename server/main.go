@@ -18,6 +18,7 @@ func main() {
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log.Println("received request")
 			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Hello World!"))
 		}),
 		Addr:      ":4433",
 		TLSConfig: &tls.Config{Certificates: []tls.Certificate{tlsCert()}},
