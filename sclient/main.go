@@ -10,6 +10,14 @@ import (
 	"github.com/quic-go/quic-go"
 )
 
+var (
+	addr    = "localhost:4433"
+	tlsConf = &tls.Config{
+		InsecureSkipVerify: true,
+		NextProtos:         []string{"quic-echo-example"},
+	}
+)
+
 func main() {
 	err := c()
 	if err != nil {
@@ -18,11 +26,6 @@ func main() {
 }
 
 func c() error {
-	addr := "localhost:4433"
-	tlsConf := &tls.Config{
-		InsecureSkipVerify: true,
-		NextProtos:         []string{"quic-echo-example"},
-	}
 	conn, err := quic.DialAddr(addr, tlsConf, nil)
 	if err != nil {
 		return fmt.Errorf("failed to dial: %v", err)
@@ -38,7 +41,6 @@ func c() error {
 	if err != nil {
 		return err
 	}
-
 	buf := make([]byte, len(message))
 	_, err = io.ReadFull(stream, buf)
 	if err != nil {
