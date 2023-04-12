@@ -24,13 +24,13 @@ var (
 )
 
 func main() {
-	err := s()
+	err := startServer()
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func s() error {
+func startServer() error {
 	addr := ":4433"
 	listener, err := quic.ListenAddr(addr, tlsConf, nil)
 	if err != nil {

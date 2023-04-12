@@ -19,13 +19,13 @@ var (
 )
 
 func main() {
-	err := c()
+	err := startClient()
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func c() error {
+func startClient() error {
 	conn, err := quic.DialAddr(addr, tlsConf, nil)
 	if err != nil {
 		return fmt.Errorf("failed to dial: %v", err)
