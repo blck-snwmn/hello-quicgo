@@ -6,12 +6,14 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/binary"
 	"encoding/pem"
 	"fmt"
 	"io"
 	"log"
 	"math/big"
 
+	"github.com/blck-snwmn/hello-quicgo/schema/fbs"
 	"github.com/quic-go/quic-go"
 )
 
@@ -43,14 +45,52 @@ func startServer() error {
 		}
 		go func() {
 			fmt.Println("recieved connection")
+			defer fmt.Println("close connection")
 			stream, err := conn.AcceptStream(context.Background())
 			if err != nil {
 				panic(err)
 			}
-			_, err = io.Copy(loggingWriter{stream}, stream)
-			if err != nil {
-				log.Printf("failed to copy: %v\n", err)
-				return
+
+			for {
+				fmt.Printf("streamID=%d\n", stream.StreamID())
+
+				var lengthBuf [4]byte
+				_, err := stream.Read(lengthBuf[:])
+				if err != nil {
+					if err == io.EOF {
+						return
+					}
+					fmt.Printf("failed to read length: %v\n", err)
+					return
+				}
+				length := binary.LittleEndian.Uint32(lengthBuf[:])
+				fmt.Printf("length=%d\n", length)
+
+				buf := make([]byte, length)
+				_, err = stream.Read(buf)
+				if err != nil {
+					if err == io.EOF {
+						return
+					}
+					fmt.Printf("failed to read message: %v\n", err)
+					return
+				}
+
+				user := fbs.GetRootAsUser(buf, 0)
+
+				var pos fbs.Position
+				user.Pos(&pos)
+
+				fmt.Printf("name=`%s`, ", user.Name())
+				fmt.Printf("color=%v, ", user.Color())
+				fmt.Printf("position{x, y, z} = {%v, %v, %v}, ", pos.X(), pos.Y(), pos.Z())
+
+				for i := 0; i < user.InventoryLength(); i++ {
+					var item fbs.Item
+					user.Inventory(&item, i)
+					fmt.Printf("item[%d]:name=%s,", i, item.Name())
+				}
+				fmt.Println()
 			}
 		}()
 	}

@@ -2,7 +2,10 @@ module github.com/blck-snwmn/hello-quicgo
 
 go 1.20
 
-require github.com/quic-go/quic-go v0.33.0
+require (
+	github.com/google/flatbuffers v23.3.3+incompatible
+	github.com/quic-go/quic-go v0.33.0
+)
 
 require (
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
