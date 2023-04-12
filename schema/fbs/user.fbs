@@ -1,0 +1,22 @@
+namespace schema.fbs;
+
+enum Color:byte { Red = 0, Green, Blue = 2 }
+
+struct Position {
+  x: float;
+  y: float;
+  z: float;
+}
+
+table User {
+  name: string;
+  pos: Position; // Struct.
+  color: Color = Blue; // Enum.
+  inventory: [Item];  // Vector of tables.
+}
+
+table Item {
+  name: string;
+}
+
+root_type User;
