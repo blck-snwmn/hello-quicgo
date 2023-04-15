@@ -22,12 +22,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// defer resp.Body.Close()
-	// b, err := io.ReadAll(resp.Body)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Printf("Received: %s\n", b)
 
 	stream, err := conn.OpenStreamSync(context.Background())
 	if err != nil {
