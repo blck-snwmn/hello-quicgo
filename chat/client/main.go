@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -16,18 +18,22 @@ import (
 
 func main() {
 	var sg sync.WaitGroup
-	for _, name := range []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"} {
+	for i := 0; i < 50; i++ {
 		sg.Add(1)
 		go func(name string) {
 			defer sg.Done()
-			err := exec(name)
+			err := exec("name-" + name)
 			if err != nil {
 				panic(err)
 			}
-		}(name)
+		}(hex.EncodeToString([]byte{byte(i)}))
 	}
 	sg.Wait()
 }
+
+var (
+	max = big.NewInt(100)
+)
 
 func exec(name string) error {
 	d := webtransport.Dialer{
@@ -51,21 +57,38 @@ func exec(name string) error {
 	tick := time.NewTicker(time.Second)
 	after := time.After(10 * time.Second)
 
+	// x, _ := rand.Int(rand.Reader, max)
+	// y, _ := rand.Int(rand.Reader, max)
+	// z, _ := rand.Int(rand.Reader, max)
+
+	// currentPosition := &fbs.PositionT{
+	// 	X: float32(x.Int64()),
+	// 	Y: float32(y.Int64()),
+	// 	Z: float32(z.Int64()),
+	// }
+
+	currentPosition := &fbs.PositionT{
+		X: 0,
+		Y: 0,
+		Z: 0,
+	}
+
 end:
 	for {
 		select {
 		case <-after:
 			break end
 		case <-tick.C:
+			// currentPosition = &fbs.PositionT{
+			// 	X: currentPosition.X + 1,
+			// 	Y: currentPosition.Y + 1,
+			// 	Z: currentPosition.Z + 1,
+			// }
 			{
-				builder := flatbuffers.NewBuilder(200)
+				builder := flatbuffers.NewBuilder(2000)
 				u := fbs.UserT{
 					Name: name,
-					Pos: &fbs.PositionT{
-						X: float32(11),
-						Y: float32(12),
-						Z: float32(13),
-					},
+					Pos:  currentPosition,
 				}
 				builder.FinishSizePrefixed(u.Pack(builder))
 				buf := builder.FinishedBytes()
@@ -82,7 +105,7 @@ end:
 					return fmt.Errorf("failed to read length: %w", err)
 				}
 				length := binary.LittleEndian.Uint32(lengthBuf[:])
-				fmt.Printf("length=%d\n", length)
+				fmt.Printf("[%s]%d\n", name, length)
 
 				buf := make([]byte, length)
 				_, err = stream.Read(buf)
@@ -90,11 +113,22 @@ end:
 					return fmt.Errorf("failed to read message: %w", err)
 				}
 				bs := fbs.GetRootAsBroadcast(buf, 0)
-				bb := bs.UnPack()
-				for _, u := range bb.Poss {
-					fmt.Printf("[%s]{x,y,z}={%f,%f,%f}", u.Name, u.Pos.X, u.Pos.Y, u.Pos.Z)
-				}
-				fmt.Println()
+				_ = bs.UnPack()
+
+				// var sb strings.Builder
+
+				// sb.WriteString(fmt.Sprintf("%s: elem=%d, length=%d\n", name, len(bb.Poss), length))
+				// for _, u := range bb.Poss {
+				// 	if u == nil {
+				// 		continue
+				// 	}
+				// 	if u.Pos == nil {
+				// 		sb.WriteString(fmt.Sprintf("\t[%s]no pos\n", u.Name))
+				// 	} else {
+				// 		sb.WriteString(fmt.Sprintf("\t[%s]{x,y,z}={%f,%f,%f}\n", u.Name, u.Pos.X, u.Pos.Y, u.Pos.Z))
+				// 	}
+				// }
+				// fmt.Println(sb.String() + "end")
 			}
 		}
 	}
