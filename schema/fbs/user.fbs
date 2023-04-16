@@ -19,4 +19,15 @@ table Item {
   name: string;
 }
 
+table UserPosition {
+  name: string;
+  pos: Position;
+}
+
+table Broadcast {
+  poss: [UserPosition]; 
+}
+
+
 root_type User;
+root_type Broadcast;
