@@ -105,6 +105,8 @@ func (ch *chat) handleSession(conn *webtransport.Session, roomName string) error
 	if err != nil {
 		return fmt.Errorf("opening stream failed: %w", err)
 	}
+
+	room := ch.getRoom(roomName)
 	for {
 		var lengthBuf [4]byte
 		_, err = stream.Read(lengthBuf[:])
@@ -124,7 +126,6 @@ func (ch *chat) handleSession(conn *webtransport.Session, roomName string) error
 		var pos fbs.Position
 		user.Pos(&pos)
 
-		room := ch.getRoom(roomName)
 		room.updatePosition(string(user.Name()), position{
 			x: pos.X(),
 			y: pos.Y(),
@@ -150,6 +151,8 @@ func (ch *chat) handleSession(conn *webtransport.Session, roomName string) error
 		builder := flatbuffers.NewBuilder(200)
 		builder.FinishSizePrefixed(b.Pack(builder))
 		buf = builder.FinishedBytes()
+
+		fmt.Printf("[%s]%X\n", user.Name(), buf)
 
 		_, err := stream.Write(buf)
 		if err != nil {
