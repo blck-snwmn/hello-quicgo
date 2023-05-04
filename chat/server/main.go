@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"sync"
@@ -109,14 +110,14 @@ func (ch *chat) handleSession(conn *webtransport.Session, roomName string) error
 	room := ch.getRoom(roomName)
 	for {
 		var lengthBuf [4]byte
-		_, err = stream.Read(lengthBuf[:])
+		_, err = io.ReadFull(stream, lengthBuf[:])
 		if err != nil {
 			return fmt.Errorf("failed to read length: %w", err)
 		}
 		length := binary.LittleEndian.Uint32(lengthBuf[:])
 
 		buf := make([]byte, length)
-		_, err = stream.Read(buf)
+		_, err = io.ReadFull(stream, buf)
 		if err != nil {
 			return fmt.Errorf("failed to read message: %w", err)
 		}
@@ -152,7 +153,8 @@ func (ch *chat) handleSession(conn *webtransport.Session, roomName string) error
 		builder.FinishSizePrefixed(b.Pack(builder))
 		buf = builder.FinishedBytes()
 
-		fmt.Printf("[%s]%X\n", user.Name(), buf)
+		// fmt.Printf("[%s]%X\n", user.Name(), buf)
+		fmt.Printf("[%s]%d\n", user.Name(), len(buf))
 
 		_, err := stream.Write(buf)
 		if err != nil {

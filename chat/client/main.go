@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"math/big"
 	"sync"
 	"time"
@@ -18,7 +19,7 @@ import (
 
 func main() {
 	var sg sync.WaitGroup
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 100; i++ {
 		sg.Add(1)
 		go func(name string) {
 			defer sg.Done()
@@ -54,7 +55,7 @@ func exec(name string) error {
 	}
 	defer stream.Close()
 
-	tick := time.NewTicker(time.Second)
+	tick := time.NewTicker(100 * time.Microsecond)
 	after := time.After(10 * time.Second)
 
 	// x, _ := rand.Int(rand.Reader, max)
@@ -100,17 +101,23 @@ end:
 			}
 			{
 				var lengthBuf [4]byte
-				_, err = stream.Read(lengthBuf[:])
+				n, err := io.ReadFull(stream, lengthBuf[:])
 				if err != nil {
-					return fmt.Errorf("failed to read length: %w", err)
+					return fmt.Errorf("failed to read length: %w\n", err)
+				}
+				if n != 4 {
+					fmt.Printf("failed to read length. not 4")
 				}
 				length := binary.LittleEndian.Uint32(lengthBuf[:])
 				fmt.Printf("[%s]%d\n", name, length)
 
 				buf := make([]byte, length)
-				_, err = stream.Read(buf)
+				n, err = io.ReadFull(stream, buf)
 				if err != nil {
-					return fmt.Errorf("failed to read message: %w", err)
+					return fmt.Errorf("[%s]failed to read message: %w", name, err)
+				}
+				if uint32(n) != length {
+					fmt.Printf("[%s]failed to read length. got=%d, want %d\n", name, n, length)
 				}
 				bs := fbs.GetRootAsBroadcast(buf, 0)
 				_ = bs.UnPack()
